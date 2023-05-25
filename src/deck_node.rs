@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use inquire::{error::InquireResult, Select, Text, MultiSelect};
+use inquire::{error::InquireResult, Select, Text};
 
 use crate::prelude::*;
 
@@ -19,8 +19,7 @@ impl DeckSet {
     }
 
     pub fn prompt_new() -> InquireResult<Self> {
-        let name = Text::new("Name:")
-            .prompt()?;
+        let name = Text::new("Name:").prompt()?;
         Ok(Self::new(name))
     }
 
@@ -35,14 +34,15 @@ impl DeckSet {
     fn entries_options(&self) -> (Vec<String>, HashMap<String, usize>) {
         let mut options: Vec<String> = self.entries
             .iter()
-            .map(|entry| entry.display())
+            .enumerate()
+            .map(|(index, entry)| format!("{}. {}", index + 1, entry.display()))
             .collect();
         let option_to_index: HashMap<String, usize> = options
             .iter()
             .enumerate()
-            .map(|(index, entry)| (format!("{}. {}", index + 1, entry), index))
+            .map(|(index, entry)| (entry.clone(), index))
             .collect();
-        options.insert(0, RETURN.into());
+        options.insert(0, RETURN.to_owned());
         (options, option_to_index)
     }
 
@@ -51,7 +51,14 @@ impl DeckSet {
             let options = if self.entries.is_empty() {
                 vec![ADD_DECK, ADD_SET, RENAME_SET, RETURN]
             } else {
-                vec![ADD_DECK, ADD_SET, ENTRIES, REMOVE_ENTRIES, RENAME_SET, RETURN]
+                vec![
+                    ADD_DECK,
+                    ADD_SET,
+                    ENTRIES,
+                    REMOVE_ENTRIES,
+                    RENAME_SET,
+                    RETURN,
+                ]
             };
 
             match Select::new(&self.display(), options).prompt()? {
@@ -63,20 +70,18 @@ impl DeckSet {
                     let set = DeckSet::prompt_new()?;
                     self.entries.push(DeckNode::Inner(set));
                 }
-                ENTRIES => {
-                    loop {
-                        let (options, option_to_index) = self.entries_options();
-                        let opt_return = RETURN.to_owned();
-                        match Select::new(&self.display(), options).prompt()? {
-                            opt_return => break,
-                            option => {
-                                let index = option_to_index[&option];
-                            }
-                        }
-                    }
-                }
+                ENTRIES => loop {
+                    let (options, option_to_index) = self.entries_options();
+                    let option = Select::new(&self.display(), options.clone()).prompt()?;
+                    let Some(index) = option_to_index.get(&option) else {
+                        break;
+                    };
+                    let option = &mut self.entries[*index];
+                    option.prompt_edit()?
+                },
                 REMOVE_ENTRIES => {
                     let (options, option_to_index) = self.entries_options();
+                    let option = Select::new(&self.display(), options.clone()).prompt()?;
                 }
                 RENAME_SET => {
                     let name = Text::new(&format!("{} ->", self.name)).prompt()?;
@@ -108,6 +113,13 @@ impl DeckNode {
         match self {
             Self::Inner(set) => set.display(),
             Self::Leaf(deck) => deck.display(),
+        }
+    }
+
+    pub fn prompt_edit(&mut self) -> InquireResult<()> {
+        match self {
+            Self::Inner(set) => set.prompt_edit(),
+            Self::Leaf(deck) => deck.prompt_edit(),
         }
     }
 }

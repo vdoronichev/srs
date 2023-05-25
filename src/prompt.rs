@@ -12,6 +12,8 @@ pub const RENAME_SET: &str = "Rename Set";
 pub const ENTRIES: &str = "Entries";
 
 pub const ADD_CARD: &str = "Add Card";
+pub const LIST_CARDS: &str = "List Cards";
+pub const REMOVE_CARDS: &str = "Remove Cards";
 pub const RENAME_DECK: &str = "Rename Deck";
 pub const CARDS: &str = "Cards";
 
@@ -25,18 +27,11 @@ pub const PASS: &str = "Pass";
 pub const AGAIN: &str = "Again";
 
 pub fn prompt_confirm() -> InquireResult<bool> {
-    return Ok(match Select::new("Are you sure?", vec![NO, YES]).prompt()? {
-        NO => false,
-        YES => true,
-        _ => panic!("invalid selection"),
-    });
-}
-
-pub fn text_block(message: impl Into<String>) -> String {
-    let message: String = message.into();
-    let lines: Vec<String> = message
-        .lines()
-        .map(|line| format!("    {}", line))
-        .collect();
-    lines.join("\n")
+    return Ok(
+        match Select::new("Are you sure?", vec![NO, YES]).prompt()? {
+            NO => false,
+            YES => true,
+            _ => panic!("invalid selection"),
+        },
+    );
 }
