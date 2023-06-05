@@ -6,7 +6,7 @@ use crate::prelude::*;
 pub struct Card {
     pub front: String,
     pub back: String,
-    pub due: DateTime<Utc>,
+    pub due: NaiveDate,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -20,7 +20,7 @@ impl Card {
         Self {
             front: front.into(),
             back: back.into(),
-            due: Utc::now(),
+            due: Utc::now().date_naive(),
         }
     }
 
@@ -66,9 +66,10 @@ impl Card {
                     self.back = back;
                 }
                 EDIT_DUE => {
-                    let date = DateSelect::new(&format!("{} ->", self.due)).prompt()?;
-                    let time = NaiveTime::from_hms_opt(4, 0, 0).expect("invalid date");
-                    self.due = Utc.from_local_datetime(&NaiveDateTime::new(date, time)).single().expect("no single date");
+                    let date = DateSelect::new(&format!("{} ->", self.due))
+                        .with_default(self.due)
+                        .prompt()?;
+                    self.due = date;
                 }
                 RETURN => return Ok(()),
                 _ => panic!("invalid selection"),
