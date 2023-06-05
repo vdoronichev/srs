@@ -20,5 +20,5 @@ pub fn text_block(str: &str) -> String {
         .lines()
         .map(|line| format!("    {}", line))
         .collect();
-    lines.join("\n")
+    format!("\n{}\n", lines.join("\n"))
 }

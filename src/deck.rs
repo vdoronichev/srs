@@ -32,7 +32,7 @@ impl Deck {
     }
 
     fn cards_options(&self) -> (Vec<String>, HashMap<String, usize>) {
-        let mut options: Vec<String> = self.cards
+        let options: Vec<String> = self.cards
             .iter()
             .enumerate()
             .map(|(index, entry)| format!("{}. {}", index + 1, entry.display()))
@@ -42,7 +42,6 @@ impl Deck {
             .enumerate()
             .map(|(index, entry)| (entry.clone(), index))
             .collect();
-        options.insert(0, RETURN.to_owned());
         (options, option_to_index)
     }
 
@@ -60,7 +59,8 @@ impl Deck {
                     self.cards.push(card);
                 }
                 LIST_CARDS => loop {
-                    let (options, option_to_index) = self.cards_options();
+                    let (mut options, option_to_index) = self.cards_options();
+                    options.insert(0, RETURN.into());
                     let option = Select::new(&self.display(), options.clone()).prompt()?;
                     let Some(index) = option_to_index.get(&option) else {
                         break;
@@ -70,7 +70,20 @@ impl Deck {
                 }
                 REMOVE_CARDS => {
                     let (options, option_to_index) = self.cards_options();
-                    let option = MultiSelect::new(&self.display(), options.clone()).prompt()?;
+                    let options = MultiSelect::new("Remove cards:", options.clone()).prompt()?;
+                    let mut indices_to_remove: Vec<_> = options
+                        .into_iter()
+                        .map(|select| option_to_index[&select])
+                        .collect();
+                    sort(&mut indices_to_remove);
+
+                    if indices_to_remove.is_empty() || prompt_confirm()? {
+                        // indices must be reversed so that we don't remove invalid indices
+                        // since all indices get shifted after we remove one
+                        for index in indices_to_remove.into_iter().rev() {
+                            self.cards.remove(index);
+                        }
+                    }
                 }
                 RENAME_DECK => {
                     let name = Text::new(&format!("{} ->", self.name)).prompt()?;

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use inquire::{error::InquireResult, Select, Text, DateSelect};
 
 use crate::prelude::*;
@@ -53,7 +51,7 @@ impl Card {
 
     pub fn prompt_edit(&mut self) -> InquireResult<()> {
         loop {
-            let options = vec![PREVIEW, EDIT_FRONT, EDIT_BACK, EDIT_DUE];
+            let options = vec![PREVIEW, EDIT_FRONT, EDIT_BACK, EDIT_DUE, RETURN];
 
             match Select::new(&self.display(), options).prompt()? {
                 PREVIEW => {
@@ -70,8 +68,9 @@ impl Card {
                 EDIT_DUE => {
                     let date = DateSelect::new(&format!("{} ->", self.due)).prompt()?;
                     let time = NaiveTime::from_hms_opt(4, 0, 0).expect("invalid date");
-                    self.due = Utc.from_local_datetime(&NaiveDateTime::new(date, time)); //.expect("invalid date time");
+                    self.due = Utc.from_local_datetime(&NaiveDateTime::new(date, time)).single().expect("no single date");
                 }
+                RETURN => return Ok(()),
                 _ => panic!("invalid selection"),
             }
         }

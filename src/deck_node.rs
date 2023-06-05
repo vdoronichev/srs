@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use inquire::{error::InquireResult, Select, Text};
+use inquire::{error::InquireResult, Select, Text, MultiSelect};
 
 use crate::prelude::*;
 
@@ -32,7 +32,7 @@ impl DeckSet {
     }
 
     fn entries_options(&self) -> (Vec<String>, HashMap<String, usize>) {
-        let mut options: Vec<String> = self.entries
+        let options: Vec<String> = self.entries
             .iter()
             .enumerate()
             .map(|(index, entry)| format!("{}. {}", index + 1, entry.display()))
@@ -42,7 +42,6 @@ impl DeckSet {
             .enumerate()
             .map(|(index, entry)| (entry.clone(), index))
             .collect();
-        options.insert(0, RETURN.to_owned());
         (options, option_to_index)
     }
 
@@ -71,7 +70,8 @@ impl DeckSet {
                     self.entries.push(DeckNode::Inner(set));
                 }
                 ENTRIES => loop {
-                    let (options, option_to_index) = self.entries_options();
+                    let (mut options, option_to_index) = self.entries_options();
+                    options.insert(0, RETURN.into());
                     let option = Select::new(&self.display(), options.clone()).prompt()?;
                     let Some(index) = option_to_index.get(&option) else {
                         break;
@@ -81,7 +81,20 @@ impl DeckSet {
                 },
                 REMOVE_ENTRIES => {
                     let (options, option_to_index) = self.entries_options();
-                    let option = Select::new(&self.display(), options.clone()).prompt()?;
+                    let options = MultiSelect::new("Remove entries:", options.clone()).prompt()?;
+                    let mut indices_to_remove: Vec<_> = options
+                        .into_iter()
+                        .map(|select| option_to_index[&select])
+                        .collect();
+                    sort(&mut indices_to_remove);
+
+                    if indices_to_remove.is_empty() || prompt_confirm()? {
+                        // indices must be reversed so that we don't remove invalid indices
+                        // since all indices get shifted after we remove one
+                        for index in indices_to_remove.into_iter().rev() {
+                            self.entries.remove(index);
+                        }
+                    }
                 }
                 RENAME_SET => {
                     let name = Text::new(&format!("{} ->", self.name)).prompt()?;

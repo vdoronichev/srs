@@ -1,4 +1,4 @@
-use inquire::{error::InquireResult, Select, Text};
+use inquire::{error::InquireResult, Select};
 
 pub const NO: &str = "No";
 pub const YES: &str = "Yes";
