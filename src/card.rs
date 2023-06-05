@@ -1,4 +1,4 @@
-use inquire::{error::InquireResult, Select, Text, DateSelect};
+use inquire::{error::InquireResult, DateSelect, Select, Text};
 
 use crate::prelude::*;
 
@@ -58,18 +58,20 @@ impl Card {
                     self.prompt_ask()?;
                 }
                 EDIT_FRONT => {
-                    let front = Text::new(&format!("{} ->", ellipsis(&self.front, TEXT_WIDTH))).prompt()?;
+                    let front =
+                        Text::new(&format!("{} ->", ellipsis(&self.front, TEXT_WIDTH))).prompt()?;
                     self.front = front;
                 }
                 EDIT_BACK => {
-                    let back = Text::new(&format!("{} ->", ellipsis(&self.back, TEXT_WIDTH))).prompt()?;
+                    let back =
+                        Text::new(&format!("{} ->", ellipsis(&self.back, TEXT_WIDTH))).prompt()?;
                     self.back = back;
                 }
                 EDIT_DUE => {
-                    let date = DateSelect::new(&format!("{} ->", self.due))
+                    let due = DateSelect::new(&format!("{} ->", self.due))
                         .with_default(self.due)
                         .prompt()?;
-                    self.due = date;
+                    self.due = due;
                 }
                 RETURN => return Ok(()),
                 _ => panic!("invalid selection"),

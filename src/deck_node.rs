@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use inquire::{error::InquireResult, Select, Text, MultiSelect};
+use inquire::{error::InquireResult, MultiSelect, Select, Text};
 
 use crate::prelude::*;
 
@@ -32,7 +32,8 @@ impl DeckSet {
     }
 
     fn entries_options(&self) -> (Vec<String>, HashMap<String, usize>) {
-        let options: Vec<String> = self.entries
+        let options: Vec<String> = self
+            .entries
             .iter()
             .enumerate()
             .map(|(index, entry)| format!("{}. {}", index + 1, entry.display()))

@@ -16,9 +16,6 @@ pub fn ellipsis(str: &str, width: usize) -> String {
 }
 
 pub fn text_block(str: &str) -> String {
-    let lines: Vec<String> = str
-        .lines()
-        .map(|line| format!("    {}", line))
-        .collect();
+    let lines: Vec<String> = str.lines().map(|line| format!("    {}", line)).collect();
     format!("\n{}\n", lines.join("\n"))
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use inquire::{error::InquireResult, Text, Select, MultiSelect};
+use inquire::{error::InquireResult, MultiSelect, Select, Text};
 
 use crate::prelude::*;
 
@@ -32,7 +32,8 @@ impl Deck {
     }
 
     fn cards_options(&self) -> (Vec<String>, HashMap<String, usize>) {
-        let options: Vec<String> = self.cards
+        let options: Vec<String> = self
+            .cards
             .iter()
             .enumerate()
             .map(|(index, entry)| format!("{}. {}", index + 1, entry.display()))
@@ -67,7 +68,7 @@ impl Deck {
                     };
                     let option = &mut self.cards[*index];
                     option.prompt_edit()?
-                }
+                },
                 REMOVE_CARDS => {
                     let (options, option_to_index) = self.cards_options();
                     let options = MultiSelect::new("Remove cards:", options.clone()).prompt()?;
