@@ -1,7 +1,24 @@
+use inquire::Select;
 use srs::prelude::*;
 
-fn main() {
-    let mut deck_set = DeckSet::new("<root>");
+fn prompt_main(root: &mut DeckNode) -> InquireResult<()> {
+    loop {
 
-    let _ = deck_set.prompt_edit();
+    }
+}
+
+fn main() {
+    let root = DeckNode::set(
+        "All Decks",
+        [
+            DeckNode::set(
+                "French",
+                [
+                    DeckNode::deck("Vocab", []),
+                    DeckNode::deck("Nouns", []),
+                ],
+            ),
+            DeckNode::deck("Comp Sci", []),
+        ],
+    );
 }

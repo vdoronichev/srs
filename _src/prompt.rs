@@ -3,7 +3,10 @@ use inquire::{error::InquireResult, Select};
 pub const NO: &str = "No";
 pub const YES: &str = "Yes";
 
+pub const MAIN_MENU: &str = "Main Menu";
 pub const RETURN: &str = "Return";
+pub const EXIT: &str = "Exit";
+pub const STATS: &str = "Stats";
 
 pub const ADD_DECK: &str = "Add Deck";
 pub const ADD_SET: &str = "Add Set";
