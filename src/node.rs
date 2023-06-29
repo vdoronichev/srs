@@ -70,23 +70,41 @@ impl DeckNode {
     }
 
     pub fn prompt_options(&self) -> Vec<DeckPromptOption> {
-        match self {
-            Self::Set { entries, .. } => {
-                
-            }
-            Self::Deck { cards, .. } => {
-                vec![]
-            }
-        }
-
-        let options: Vec<(String, DeckPath)> = Vec::new();
-
         fn build(
-            node: &DeckNode,
-            options: &mut Vec<(String, DeckPath)>,
+            this: &DeckNode,
+            options: &mut Vec<DeckPromptOption>,
+            path: Vec<usize>,
         ) {
+            options.push(DeckPromptOption {
+                action: DeckPromptAction::Default {
+                    name: this.name(),
+                },
+                path: DeckPath::new(path.clone()),
+            });
 
+            match this {
+                DeckNode::Set { entries, expanded: true, .. } => {
+                    for (i, child) in entries.iter().enumerate() {
+                        let mut new_path = path.clone();
+                        new_path.push(i);
+                        build(child, options, new_path);
+                    }
+                    options.push(DeckPromptOption {
+                        action: DeckPromptAction::AddDeck,
+                        path: DeckPath::new(path.clone()),
+                    });
+                    options.push(DeckPromptOption {
+                        action: DeckPromptAction::AddSet,
+                        path: DeckPath::new(path.clone()),
+                    });
+                }
+                _ => {}
+            }
         }
+
+        let mut options: Vec<DeckPromptOption> = Vec::new();
+        build(self, &mut options, Vec::new());
+        options
     }
 }
 
@@ -101,12 +119,26 @@ impl DeckPath {
 
 #[derive(Clone, Debug)]
 pub struct DeckPromptOption {
-    pub name: String,
+    pub action: DeckPromptAction,
     pub path: DeckPath,
+}
+
+#[derive(Clone, Debug)]
+pub enum DeckPromptAction {
+    Default {
+        name: String,
+    },
+    AddDeck,
+    AddSet,
 }
 
 impl std::fmt::Display for DeckPromptOption {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}{}", "  ".repeat(self.path.0.len()), self.name)
+        let indent = "  ".repeat(self.path.0.len());
+        match &self.action {
+            DeckPromptAction::Default { name } => write!(f, "{}{}", indent, name),
+            DeckPromptAction::AddDeck => write!(f, "{}  ➕ Add Deck", indent),
+            DeckPromptAction::AddSet => write!(f, "{}  ➕ Add Set", indent),
+        }
     }
 }
