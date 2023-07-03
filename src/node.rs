@@ -1,5 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 
+use inquire::Text;
+
 use crate::prelude::*;
 
 #[derive(Clone, Debug)]
@@ -29,6 +31,16 @@ impl DeckNode {
             name: name.into(),
             cards: cards.into(),
         }
+    }
+
+    pub fn prompt_set() -> InquireResult<DeckNode> {
+        let name = Text::new("Enter set name:").prompt()?;
+        Ok(Self::set(name, []))
+    }
+
+    pub fn prompt_deck() -> InquireResult<DeckNode> {
+        let name = Text::new("Enter deck name:").prompt()?;
+        Ok(Self::deck(name, []))
     }
 
     pub fn at(&self, path: DeckPath) -> Option<&DeckNode> {

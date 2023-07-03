@@ -1,6 +1,24 @@
 use inquire::Select;
 use srs::prelude::*;
 
+fn main() {
+    let mut root = DeckNode::set(
+        "All Decks",
+        [
+            DeckNode::set(
+                "French",
+                [
+                    DeckNode::deck("Vocab", []),
+                    DeckNode::deck("Nouns", []),
+                ],
+            ),
+            DeckNode::deck("Comp Sci", []),
+        ],
+    );
+
+    let _ = prompt_main(&mut root);
+}
+
 fn prompt_main(root: &mut DeckNode) -> InquireResult<()> {
     enum Option {
         Deck {
@@ -45,13 +63,18 @@ fn prompt_main(root: &mut DeckNode) -> InquireResult<()> {
                 };
 
                 match target {
-                    DeckNode::Set { expanded, .. } => {
+                    DeckNode::Set { entries, expanded, .. } => {
                         match opt.action {
                             DeckPromptAction::Default { .. } => {
-                                
+                                *expanded = !*expanded;
+                            }
+                            DeckPromptAction::AddDeck => {
+                                entries.push(DeckNode::prompt_deck()?);
+                            }
+                            DeckPromptAction::AddSet => {
+                                entries.push(DeckNode::prompt_set()?);
                             }
                         }
-                        *expanded = !*expanded;
                     },
                     DeckNode::Deck { .. } => {},
                 }
@@ -62,22 +85,4 @@ fn prompt_main(root: &mut DeckNode) -> InquireResult<()> {
             Option::Quit => return Ok(()),
         }
     }
-}
-
-fn main() {
-    let mut root = DeckNode::set(
-        "All Decks",
-        [
-            DeckNode::set(
-                "French",
-                [
-                    DeckNode::deck("Vocab", []),
-                    DeckNode::deck("Nouns", []),
-                ],
-            ),
-            DeckNode::deck("Comp Sci", []),
-        ],
-    );
-
-    let _ = prompt_main(&mut root);
 }

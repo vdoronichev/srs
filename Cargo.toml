@@ -6,4 +6,4 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.24"
 unicode-truncate = "0.2.0"
-inquire = { verison = "0.6.2", features = [ "date" ] }
+inquire = { version = "0.6.2", features = [ "date" ] }
