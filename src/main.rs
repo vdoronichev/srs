@@ -22,7 +22,7 @@ fn main() {
 fn prompt_main(root: &mut DeckNode) -> InquireResult<()> {
     enum Option {
         Deck {
-            opt: DeckPromptOption,
+            opt: NodePromptOption,
             index: usize,
         },
         Stats,
@@ -53,7 +53,7 @@ fn prompt_main(root: &mut DeckNode) -> InquireResult<()> {
         options.push(Option::Stats);
         options.push(Option::Quit);
 
-        match Select::new("Main Menu", options)
+        match Select::new(MAIN_MENU, options)
             .with_starting_cursor(last_cursor)
             .prompt()?
         {
@@ -62,23 +62,7 @@ fn prompt_main(root: &mut DeckNode) -> InquireResult<()> {
                     panic!("invalid target");
                 };
 
-                match target {
-                    DeckNode::Set { entries, expanded, .. } => {
-                        match opt.action {
-                            DeckPromptAction::Default { .. } => {
-                                *expanded = !*expanded;
-                            }
-                            DeckPromptAction::AddDeck => {
-                                entries.push(DeckNode::prompt_deck()?);
-                            }
-                            DeckPromptAction::AddSet => {
-                                entries.push(DeckNode::prompt_set()?);
-                            }
-                        }
-                    },
-                    DeckNode::Deck { .. } => {},
-                }
-
+                target.prompt_edit(opt.action)?;
                 last_cursor = index;
             }
             Option::Stats => return Ok(()),

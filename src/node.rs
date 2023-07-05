@@ -1,6 +1,6 @@
-use std::collections::{HashMap, VecDeque};
+use std::{fmt, collections::VecDeque};
 
-use inquire::Text;
+use inquire::{Text, Select, MultiSelect};
 
 use crate::prelude::*;
 
@@ -15,6 +15,12 @@ pub enum DeckNode {
         name: String,
         cards: Vec<Card>,
     },
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum NodeAction {
+    Edit,
+    ToggleExpanded,
 }
 
 impl DeckNode {
@@ -81,16 +87,18 @@ impl DeckNode {
         }
     }
 
-    pub fn prompt_options(&self) -> Vec<DeckPromptOption> {
+    pub fn prompt_options(&self) -> Vec<NodePromptOption> {
         fn build(
             this: &DeckNode,
-            options: &mut Vec<DeckPromptOption>,
+            options: &mut Vec<NodePromptOption>,
             path: Vec<usize>,
         ) {
-            options.push(DeckPromptOption {
-                action: DeckPromptAction::Default {
-                    name: this.name(),
+            options.push(NodePromptOption {
+                action: match this {
+                    DeckNode::Set { .. } => NodeAction::ToggleExpanded,
+                    DeckNode::Deck { .. } => NodeAction::Edit,
                 },
+                name: this.name(),
                 path: DeckPath::new(path.clone()),
             });
 
@@ -101,12 +109,9 @@ impl DeckNode {
                         new_path.push(i);
                         build(child, options, new_path);
                     }
-                    options.push(DeckPromptOption {
-                        action: DeckPromptAction::AddDeck,
-                        path: DeckPath::new(path.clone()),
-                    });
-                    options.push(DeckPromptOption {
-                        action: DeckPromptAction::AddSet,
+                    options.push(NodePromptOption {
+                        action: NodeAction::Edit,
+                        name: "  ⚙️".to_owned(),
                         path: DeckPath::new(path.clone()),
                     });
                 }
@@ -114,9 +119,113 @@ impl DeckNode {
             }
         }
 
-        let mut options: Vec<DeckPromptOption> = Vec::new();
+        let mut options: Vec<NodePromptOption> = Vec::new();
         build(self, &mut options, Vec::new());
         options
+    }
+
+    pub fn prompt_edit(&mut self, action: NodeAction) -> InquireResult<()> {
+        loop {
+            let title = &self.name();
+            match self {
+                Self::Set { name, entries, expanded, .. } => {
+                    match action {
+                        NodeAction::ToggleExpanded => {
+                            *expanded = !*expanded;
+                        }
+                        NodeAction::Edit => {
+                            enum Option {
+                                AddDeck,
+                                AddSet,
+                                Rename,
+                                Remove,
+                                Back,
+                            }
+    
+                            impl fmt::Display for Option {
+                                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                                    write!(f, "{}", match self {
+                                        Self::AddDeck => ADD_DECK,
+                                        Self::AddSet => ADD_SET,
+                                        Self::Rename => RENAME,
+                                        Self::Remove => REMOVE,
+                                        Self::Back => BACK,
+                                    })
+                                }
+                            }
+    
+                            match Select::new(
+                                title,
+                                if entries.is_empty() {
+                                    vec![
+                                        Option::AddDeck,
+                                        Option::AddSet,
+                                        Option::Rename,
+                                        Option::Back,
+                                    ]
+                                } else {
+                                    vec![
+                                        Option::AddDeck,
+                                        Option::AddSet,
+                                        Option::Rename,
+                                        Option::Remove,
+                                        Option::Back,
+                                    ]
+                                },
+                            ).prompt()? {
+                                Option::AddDeck => {
+                                    entries.push(Self::prompt_deck()?);
+                                }
+                                Option::AddSet => {
+                                    entries.push(Self::prompt_set()?);
+                                }
+                                Option::Rename => {
+                                    *name = Text::new(&format!("{} ->", name)).prompt()?;
+                                }
+                                Option::Remove => {
+                                    struct Entry {
+                                        index: usize,
+                                        name: String,
+                                    }
+
+                                    let options: Vec<Entry> = entries
+                                        .iter()
+                                        .enumerate()
+                                        .map(|(i, x)| Entry {
+                                            index: i,
+                                            name: x.name(),
+                                        })
+                                        .collect();
+
+                                    impl fmt::Display for Entry {
+                                        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                                            write!(f, "{}", self.name)
+                                        }
+                                    }
+
+                                    let x = MultiSelect::new(
+                                        "Remove",
+                                        options,
+                                    ).prompt()?;
+                                }
+                                Option::Back => return Ok(()),
+                            }
+                        }
+                    }
+                }
+                Self::Deck { cards, .. } => {
+                    enum Option {
+                        AddCard,
+                        Rename,
+                        Remove,
+                        Back,
+                    }
+
+                    Select::new(&self.name(), vec!["abc"]).prompt()?;
+                    return Ok(());
+                }
+            }
+        }
     }
 }
 
@@ -130,27 +239,15 @@ impl DeckPath {
 }
 
 #[derive(Clone, Debug)]
-pub struct DeckPromptOption {
-    pub action: DeckPromptAction,
+pub struct NodePromptOption {
+    pub action: NodeAction,
+    pub name: String,
     pub path: DeckPath,
 }
 
-#[derive(Clone, Debug)]
-pub enum DeckPromptAction {
-    Default {
-        name: String,
-    },
-    AddDeck,
-    AddSet,
-}
-
-impl std::fmt::Display for DeckPromptOption {
+impl std::fmt::Display for NodePromptOption {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let indent = "  ".repeat(self.path.0.len());
-        match &self.action {
-            DeckPromptAction::Default { name } => write!(f, "{}{}", indent, name),
-            DeckPromptAction::AddDeck => write!(f, "{}  ➕ Add Deck", indent),
-            DeckPromptAction::AddSet => write!(f, "{}  ➕ Add Set", indent),
-        }
+        write!(f, "{}{}", indent, self.name)
     }
 }
