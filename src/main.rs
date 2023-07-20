@@ -2,7 +2,9 @@ use inquire::Select;
 use srs::prelude::*;
 use std::fmt;
 
+/// The main entry point of the program, run when the user opens the app.
 fn main() {
+    // Set up the root DeckNode, holding the hierarchy of user-created decks
     let mut root = DeckNode::set(
         "All Decks",
         [
@@ -19,9 +21,15 @@ fn main() {
         ],
     );
 
+    // Prompt the user with the options in the main menu
+    // Since this returns an `InquireResult<()>`, and a Result must be handled (it could
+    // potentially be an error!), we must assign it to *something*.
+    // We don't care about if we have an error, so just assign it to nothing (`_`).
     let _ = prompt_main(&mut root);
 }
 
+/// Shows the main menu to the user. This uses the [inquire](https://docs.rs/inquire/) library,
+/// allowing accepting validated user input easily.
 fn prompt_main(root: &mut DeckNode) -> InquireResult<()> {
     enum Option {
         Deck { opt: NodePromptOption, index: usize },
